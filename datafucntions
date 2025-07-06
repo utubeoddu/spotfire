@@ -16,3 +16,33 @@ if new_table_name in [table.Name for table in Document.Data.Tables]:
 else:
     # Create a new table with the same structure and data as the source table
     Document.Data.Tables.Add(new_table_name, source_table.DataTableReference.CreateCopy())
+
+
+
+
+
+## update datafunction
+
+from Spotfire.Dxp.Application.Scripting import ScriptDefinition
+from Spotfire.Dxp.Data import DataFunctionDefinition
+
+# Get the existing data function definition
+dfn_name = "MyPythonFunction"  # Use your actual Data Function name
+exists, data_func = Document.Data.DataFunctions.TryGetValue(dfn_name)
+
+if exists:
+    # Update the script (Python code)
+    new_script = """
+# Python 3 Code executed in Spotfire Data Function
+import pandas as pd
+
+def execute(params):
+    output = params['output']
+    output[:] = pd.DataFrame({'A': [1,2,3], 'B': [4,5,6]})
+"""
+
+    data_func.ScriptDefinition.Script = new_script
+    data_func.ScriptDefinition.ScriptLanguage = ScriptDefinition.ScriptLanguageType.Python  # Python, not IronPython
+    Document.Data.DataFunctions[dfn_name] = data_func
+else:
+    print("Data function not found.")
