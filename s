@@ -4,17 +4,24 @@ from Spotfire.Dxp.Data.DataFunctions import *
 # Specify the name of the data function to retrieve
 dataFunctionName = "YourDataFunctionName"  # Replace with the actual data function name
 
-# Get the DataFunction from the current document
-dataFunction = Document.Data.DataFunctions.FindFunction(dataFunctionName)
+# Initialize variables
+scriptContent = None
+scriptLanguage = None
+found = False
 
-if dataFunction is not None:
-    # Get the DataFunctionDefinition
-    definition = dataFunction.Definition
-    
-    # Store the script and language in variables
-    scriptContent = definition.Script  # Gets the script text
-    scriptLanguage = definition.TypeIdentifier.Name  # Gets the language (e.g., "Python", "TERR", etc.)
-    
+# Iterate through the DataFunctions collection to find the function
+for dataFunction in Document.Data.DataFunctions:
+    if dataFunction.Name == dataFunctionName:
+        # Get the DataFunctionDefinition
+        definition = dataFunction.Definition
+        
+        # Store the script and language in variables
+        scriptContent = definition.Script  # Gets the script text
+        scriptLanguage = definition.TypeIdentifier.Name  # Gets the language (e.g., "Python", "TERR", etc.)
+        found = True
+        break
+
+if found:
     # Optionally, store in Document Properties for use in Spotfire
     Document.Properties["StoredScript"] = scriptContent
     Document.Properties["StoredLanguage"] = scriptLanguage
