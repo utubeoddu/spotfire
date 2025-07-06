@@ -2,52 +2,53 @@ from Spotfire.Dxp.Data import DataFunctionDefinitionBuilder, DataType
 
 def add_output_params_if_missing(dfname, outputvars):
     """
-    Adds missing output parameters to an existing data function definition.
-
-    :param dfname: Name of the data function
-    :param outputvars: List of (param_name, param_type) tuples. e.g., [("output1", DataType.Table), ("output2", DataType.Table)]
+    Adds missing output parameters to a Python Data Function in Spotfire.
+    
+    :param dfname: Name of the data function in Document.Data.DataFunctions
+    :param outputvars: List of (param_name, param_type) tuples like [("output1", DataType.Table)]
     """
-    # Find the data function instance
-    existing_function = None
+    existing_definition = None
     for df in Document.Data.DataFunctions:
         if df.Name == dfname:
-            existing_function = df
+            existing_definition = df
             break
 
-    if existing_function is None:
-        raise Exception("Data Function '{}' not found.".format(dfname))
+    if existing_definition is None:
+        raise Exception("❌ Data Function '{}' not found.".format(dfname))
 
-    # Access the definition through the function's DefinitionReference
-    definition = existing_function.DefinitionReference
-    script = definition.Script
-    language = definition.ScriptLanguage
+    # Extract script and language from the definition
+    script = existing_definition.Script
+    language = existing_definition.ScriptLanguage
 
-    # Prepare builder with existing script
+    # Rebuild definition using a builder
     builder = DataFunctionDefinitionBuilder(language)
     builder.Script = script
 
-    # Track existing output parameters
-    existing_outputs = [p.Name for p in definition.Parameters if p.IsOutput]
+    # Track all existing output parameters
+    existing_output_names = [param.Name for param in existing_definition.Parameters if param.IsOutput]
 
-    # Re-add all current parameters
-    for param in definition.Parameters:
+    # Re-add all parameters (input + output)
+    for param in existing_definition.Parameters:
         if param.IsOutput:
             builder.AddOutputParameter(param.Name, param.Type)
         else:
             builder.AddInputParameter(param.Name, param.Type)
 
-    # Add missing output parameters
+    # Add only missing output parameters
     added_any = False
     for param_name, param_type in outputvars:
-        if param_name not in existing_outputs:
+        if param_name not in existing_output_names:
             builder.AddOutputParameter(param_name, param_type)
             added_any = True
-            print("✅ Added missing output parameter: {}".format(param_name))
+            print("✅ Added missing output parameter:", param_name)
         else:
-            print("⚠️ Output parameter '{}' already exists.".format(param_name))
+            print("⚠️ Output parameter already exists:", param_name)
 
-    # Only update definition if needed
+    # If new outputs added, rebuild and replace definition
     if added_any:
         new_def = builder.Build()
-        existing_function.DefinitionReference = new_def
-        existing_function.Refresh()
+        Document.Data.DataFunctions.Remove(existing_definition)
+        Document.Data.DataFunctions.Add(new_def)
+        print("🔁 Data function '{}' updated.".format(dfname))
+    else:
+        print("✅ No changes made to data function '{}'.".format(dfname))
