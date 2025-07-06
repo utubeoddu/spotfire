@@ -1,1 +1,18 @@
-test
+from Spotfire.Dxp.Data import DataTable
+
+# Get the document property value for the table name
+new_table_name = Document.Properties["NewTableName"]
+
+# Reference the source DataTable created by the new data function (replace 'df' if the data function output table has a different name)
+source_table = Document.Data.Tables["df"]
+
+# Check if a table with new_table_name already exists
+if new_table_name in [table.Name for table in Document.Data.Tables]:
+    # Get the existing table
+    existing_table = Document.Data.Tables[new_table_name]
+    
+    # Replace the data in the existing table with the new data function's output
+    existing_table.ReplaceData(source_table)
+else:
+    # Create a new table with the same structure and data as the source table
+    Document.Data.Tables.Add(new_table_name, source_table.DataTableReference.CreateCopy())
