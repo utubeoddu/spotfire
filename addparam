@@ -1,0 +1,38 @@
+from Spotfire.Dxp.Data import DataFunctionDefinitionBuilder, DataType
+
+# Name of the data function to update
+dfn_name = "MyPythonFunction"
+
+# Search for the existing data function object
+existing_function = None
+for fn in Document.Data.DataFunctions:
+    if fn.Name == dfn_name:
+        existing_function = fn
+        break
+
+if existing_function is not None:
+    # Create a new definition using the builder
+    builder = DataFunctionDefinitionBuilder("Python")  # Use "IronPython" if needed
+
+    # Update your Python 3 script
+    builder.Script = """
+import pandas as pd
+
+def execute(params):
+    output = params['output']
+    output[:] = pd.DataFrame({'Col1': [1, 2, 3], 'Col2': [4, 5, 6]})
+"""
+
+    # Add same parameter names to keep bindings intact
+    builder.AddOutputParameter("output", DataType.Table)
+
+    # Build and assign new definition
+    new_def = builder.Build()
+    existing_function.Definition = new_def
+
+    # Optional: trigger refresh
+    existing_function.AutoExecute = True
+    existing_function.Refresh()
+
+else:
+    raise Exception("Data Function '{}' not found.".format(dfn_name))
