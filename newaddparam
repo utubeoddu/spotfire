@@ -1,0 +1,55 @@
+from Spotfire.Dxp.Data import DataFunctionDefinitionBuilder, DataType
+
+def add_output_param_if_missing(dfname, param_name, param_type):
+    """
+    Adds an output parameter to the given data function if it doesn't already exist.
+
+    :param dfname: Name of the existing data function in the document
+    :param param_name: Output parameter name to add
+    :param param_type: Type of the output parameter (e.g., DataType.Table, DataType.String)
+    """
+    # Find the existing data function by name
+    existing_function = None
+    for df in Document.Data.DataFunctions:
+        if df.Name == dfname:
+            existing_function = df
+            break
+
+    if existing_function is None:
+        raise Exception("Data Function '{}' not found.".format(dfname))
+
+    # Extract current definition and script
+    definition = existing_function.Definition
+    script = definition.Script
+    language = definition.ScriptLanguage
+
+    # Create a new builder with the existing script and language
+    builder = DataFunctionDefinitionBuilder(language)
+    builder.Script = script
+
+    # Flag to check if the output already exists
+    output_exists = False
+
+    # Re-add existing parameters to the builder
+    for param in definition.Parameters:
+        if param.IsOutput:
+            builder.AddOutputParameter(param.Name, param.Type)
+            if param.Name == param_name:
+                output_exists = True
+        else:
+            builder.AddInputParameter(param.Name, param.Type)
+
+    # Add the new output param only if it's missing
+    if not output_exists:
+        builder.AddOutputParameter(param_name, param_type)
+
+        # Reassign the new definition to the existing function
+        new_def = builder.Build()
+        existing_function.Definition = new_def
+
+        # Optional: refresh to apply changes
+        existing_function.Refresh()
+
+        print("Output parameter '{}' added.".format(param_name))
+    else:
+        print("Output parameter '{}' already exists.".format(param_name))
