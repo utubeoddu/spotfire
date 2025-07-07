@@ -1,0 +1,18 @@
+from pathlib import Path
+import time
+
+file_path = Path("example.txt")
+max_retries = 3
+retry_interval = 2  # seconds
+
+for attempt in range(1, max_retries + 1):
+    if file_path.exists():
+        print(f"File found on attempt {attempt}.")
+        break
+    else:
+        print(f"Attempt {attempt}: File not found. Retrying...")
+        if attempt == max_retries:
+            file_path.touch()
+            print("File still not found. Created new file.")
+        else:
+            time.sleep(retry_interval)
